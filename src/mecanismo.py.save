@@ -1,0 +1,162 @@
+'''
+Created on 29 ago. 2017
+
+@author: AndresDiaz
+'''
+import time
+import wiringpi
+import RPi.GPIO as GPIO
+import sys
+import json
+
+class mecanismo(object):
+    '''
+    classdocs
+    '''
+    automaticMode = True
+    manualMode = False
+    FC_cierre = False
+    FC_apertura = False
+    Abrir_cierre = 167
+    Cerrar_cierre = 135
+    T1=T2=T3=T4=0
+    positions=''
+    pulse=0
+
+
+    def __init__(self, positions,query):
+        '''
+        Constructor
+        '''
+        self.positions=positions
+        
+        self.getLastPos(query)
+        
+        
+
+#     Lectura = open ("Archivo_datos.txt", "r")
+#     LastPos = Lectura.read()
+#     pulse=int(LastPos)
+#     print pulse
+#     Lectura.close()
+    
+    
+    
+    def raspberryConfig(self):
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(4, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(26, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        
+        # use 'GPIO naming'
+        wiringpi.wiringPiSetupGpio()
+         
+        # set #18 to be a PWM output
+        wiringpi.pinMode(18, wiringpi.GPIO.PWM_OUTPUT)
+        wiringpi.pinMode(19, wiringpi.GPIO.PWM_OUTPUT) 
+        # set the PWM mode to milliseconds stype
+        
+        wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
+         
+        # divide down clock
+        wiringpi.pwmSetClock(192)
+        wiringpi.pwmSetRange(2000)
+        
+    
+    def callbackOpened(self):
+            
+        global FC_apertura
+        
+        if  not GPIO.input(4):
+            FC_apertura= True
+        else:
+            FC_apertura= False
+        print FC_apertura         
+    GPIO.add_event_detect(4, GPIO.BOTH, callbackOpened,bouncetime=200)
+    
+    
+    
+    
+    def callbackClosed(self):
+           
+            global FC_cierre
+        
+            if  not GPIO.input(26):
+                    FC_cierre= True
+                    wiringpi.pwmWrite(19,self.Cerrar_cierre) 
+            else:
+                    FC_cierre= False
+                    wiringpi.pwmWrite(19,self.Abrir_cierre)        
+            print FC_cierre                
+                            
+    GPIO.add_event_detect(26, GPIO.BOTH, callbackClosed,bouncetime=200)
+    
+    
+    
+    
+    def openCover(self):
+        global T1, FC_apertura, T2, pulse
+        wiringpi.pwmWrite(19,self.Abrir_cierre)
+        #try:
+        while pulse<=250 and pulse>125:
+            T1=time.time()
+                            
+            if not FC_apertura and T1-T2 > 0.1:
+                T2=time.time()        
+                wiringpi.pwmWrite(18, pulse)
+                pulse=pulse-1
+                print pulse
+        #finally:
+                self.setLastPos()    
+            
+    
+    def closeCover(self):
+        global pulse, T3, FC_cierre, T4
+        #try:
+        while pulse>=125 and pulse<249:
+            T3=time.time()        
+                            
+            if not FC_cierre:
+                                    
+                if pulse < 240 and T3-T4 > 0.1:
+                    T4=time.time()
+                    wiringpi.pwmWrite(18, pulse)
+                    pulse=pulse+1
+                    print pulse
+                elif pulse >= 240 :
+                    T4=time.time()
+                    wiringpi.pwmWrite(18, pulse)
+                    pulse=pulse+1
+                    print pulse
+                if pulse==250:
+                    wiringpi.pwmWrite(19, self.Cerrar_cierre)
+        # finally:
+            self.setLastPos()
+    
+    
+    def setLastPos(self):
+        position = {
+                    'id' : '1',
+            'pulse' : json.dumps(self.pulse)
+        }
+        self.positions.insert(self.pulse)
+    
+    def getLastPos(self,query):
+        self.pulse=self.positions.search(query.pulse.id == 1)
+        
+        
+    def setAutomaticMode(self):
+        self.automaticMode = True
+        
+    def setManualMode(self):
+        self.manualMode = True          
+    
+            
+                    
+                            
+                                    
+                    
+                     
+    
+                    
+    
+                
