@@ -36,6 +36,8 @@ class managerMecanismo(object):
         '''
        
         self.mecanismo = mecanismo(self.positions, self.query)
+        thEphem = Thread(target=self.controlAutomatico())
+        thEphem.start()
         
         pass
     
@@ -88,36 +90,44 @@ class managerMecanismo(object):
         #Comprobamos las posibles ordenes
         if orden == 'modoAutomatico':
             resultado=self.mecanismo.setAutomaticMode()
+            self.mecanismo = mecanismo(self.positions, self.query)
+            self.cancelarHilo=False
+            thEphem = Thread(target=self.controlAutomatico())
+            thEphem.start()
 
         elif orden == 'modoManual':
             resultado=self.mecanismo.setManualMode()
+            self.cancelarHilo=True
+            
 
         elif orden == 'Abrir':
             
             
-            self.cancelarHilo=False
-            thEphem = Thread(target=self.solicitarPermiso())
-            thEphem.start()
-            
-            if self.permiso or mecanismo.manualMode:
+            if self.mecanismo.manualMode:
+                self.cancelarHilo=True
                 resultado=self.mecanismo.openCover()
+            else:
+                print("Mecanismo en modo automatico, active el modo manual para abrir o cerrar la tapa.")
+                resultado=True
 
         elif orden == 'Cerrar':
-            self.cancelarHilo=True
-            resultado=self.mecanismo.closeCover()
+            if self.mecanismo.manualMode:
+                resultado=self.mecanismo.closeCover()
 
-        
+            else:
+                print("Mecanismo en modo automatico, active el modo manual para abrir o cerrar la tapa.")
+                resultado=True
             
                 
                    
         # Actualizamos la tarea y finalizamos su procesamiento
-        if resultado != True:
+        if resultado == True:
             self.setResult(resultado, iden)
 
         print('Final del procesado')
         return resultado
         
-    def solicitarPermiso(self):
+    def controlAutomatico(self):
 
         observatorio = ephem.Observer()
         observatorio.lat, observatorio.lon = '40.406161', '-3.838485'
@@ -140,11 +150,10 @@ class managerMecanismo(object):
             else:
                 Permiso_apertura=True #Noche
         
-        
-            print ('%f'%h_AmanecerPrevio)
-            print ('%f'%h_AtardecerPrevio)
-            print ('%f'%observatorio.date)
-            print Permiso_apertura
+            if Permiso_apertura and not self.mecanismo.FC_apertura:
+                self.mecanismo.openCover()
+            elif not Permiso_apertura and not self.mecanismo.FC_cierre:
+                self.mecanismo.closeCover()
             
             time.sleep(10)
     

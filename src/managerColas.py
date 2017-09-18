@@ -14,7 +14,7 @@ class managerColas(object):
 
     mecanismo = None
     credentials = pika.PlainCredentials('venus', 'informaticaciclope')
-    parameters = pika.ConnectionParameters('venus.datsi.fi.upm.es',5672, '/',credentials)
+    parameters = pika.ConnectionParameters(host='localhost')
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
     
@@ -25,13 +25,13 @@ class managerColas(object):
         
         
         self.channel.queue_declare(queue=c.me, durable = True)
-        self.channel.exchange_declare(exchange=c.me, type='fanout')
+        self.channel.exchange_declare(exchange=c.me)
         for x in c.lista:
-                self.channel.queue_bind(exchange=c.me, queue=x, durable=True)
+                self.channel.queue_declare(queue=x, durable=True)
 
         for x,y in zip(c.lista,c.severity):
-                self.channel.exchange_declare(exchange=x,
-                                        type='fanout')
+                self.channel.exchange_declare(exchange=x
+                                    )
                 self.channel.queue_bind(exchange=x,
                                    queue=c.me,
                                    routing_key=y)
@@ -60,3 +60,4 @@ class managerColas(object):
         self.channel.basic_publish(exchange=c.me,
                       routing_key=severity,
                       body=mensaje)      
+        
