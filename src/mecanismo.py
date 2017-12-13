@@ -105,7 +105,7 @@ class mecanismo(object):
         
             self.setLastPos()
         
-        if self.pulse==250 and not self.FC_apertura:
+    #    if self.pulse==250 and not self.FC_apertura:
             #self.cola.sendMessage('Fallo al abrir la tapa','critical')    
             
         return True 
@@ -133,7 +133,7 @@ class mecanismo(object):
                 
                 self.setLastPos(self.pulse)
                 
-        if self.pulse==250 and not self.FC_cierre:
+#        if self.pulse==250 and not self.FC_cierre:
             #self.cola.sendMessage('Fallo al abrir la tapa','critical')
                    
         return True    
