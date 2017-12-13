@@ -24,13 +24,13 @@ managerMec = managerMecanismo()
 #Se revisa la base de datos.
 managerMec.tasksReview()
 
-#Se define la cola de mensajería
+#Se define la cola de mensajerÃ­a
 #cola = managerColas()
 #cola.setMecanismo(managerMec.mecanismo)
 #Se lanza en un nuevo hilo
 #thCola = Thread(target=cola.startQueue)
 #thCola.start()
-#Se pasa la cola de mensajería a la instancia del mecanismo.
+#Se pasa la cola de mensajerÃ­a a la instancia del mecanismo.
 #managerMec.mecanismo.setCola(cola)
 
 
